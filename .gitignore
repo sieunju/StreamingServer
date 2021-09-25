@@ -36,7 +36,6 @@ vcs.xml
 .idea/runConfigurations/PILL_*.xml
 .idea/runConfigurations/_FP_*.xml
 .idea/runConfigurations/_MT_*.xml
-.idea/libraries
 .idea/gradle.xml
 .idea/compiler.xml
 .idea/inspectionProfiles/profiles_settings.xml
