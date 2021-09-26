@@ -38,8 +38,11 @@ class ViewerSendManagerImpl(
         while (isRun) {
             runCatching {
                 viewerClientMap.forEach { (viewer: InetSocketAddress, info: ViewerInfo) ->
-                    val videoStreamList = videoStreamMap.get(info.getVideoTime())
+                    val videoStreamList = videoStreamMap[info.getVideoTime()]
                     if (videoStreamList != null) {
+                        if (info.isVideoStreamDone()) {
+                            info.setVideoUidList(videoStreamList)
+                        }
                         val maxSize = videoStreamList.size
                         for (idx in videoStreamList.indices) {
                             if (info.isWriteIndex(idx)) {
@@ -71,6 +74,12 @@ class ViewerSendManagerImpl(
     override fun stop() {
         isRun = false
         executors.shutdown()
+    }
+
+    private fun addViewerCurrTime(time: Long) {
+        viewerClientMap.forEach { (_: InetSocketAddress, viewer: ViewerInfo) ->
+            viewer.addCurrTime(time)
+        }
     }
 
     /**
@@ -119,6 +128,8 @@ class ViewerSendManagerImpl(
             Arrays.sort(keyArr)
             currentMiddleTime = keyArr[videoStreamMap.size / 2]
 
+            // Viewer 프레임 추가
+            addViewerCurrTime(packet.time)
             // Thread 시작.
             start()
         }

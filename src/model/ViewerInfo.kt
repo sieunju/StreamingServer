@@ -3,6 +3,7 @@ package model
 import constants.Constants
 import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
  * 각 뷰어들마다 적절한 스트리밍을 보내기 위한 데이터 모델 클래스
@@ -13,17 +14,26 @@ class ViewerInfo(private val viewerAddress: InetSocketAddress) {
     private var currTime: Long = -1
 
     // Reliable Packet 으로 받은 맵들
-//    private val videoUidSet: ConcurrentHashMap<String, Boolean> by lazy { ConcurrentHashMap<String, Boolean>() }
-    private val videoIdxSet : ConcurrentHashMap<Int, Boolean> by lazy { ConcurrentHashMap<Int, Boolean>() }
+    private val videoIdxSet: ConcurrentHashMap<Int, Boolean> by lazy { ConcurrentHashMap<Int, Boolean>() }
+    private val currTimeQue: ConcurrentLinkedQueue<Long> by lazy { ConcurrentLinkedQueue<Long>() }
 
-    fun getVideoTime() = currTime
+    fun getVideoTime(): Long {
+        if (videoIdxSet.size > 0) {
+            return currTime
+        } else {
+            if (currTimeQue.size > 0) {
+                currTime = currTimeQue.poll()
+            }
+        }
+        return currTime
+    }
 
     /**
      * 해당 비디오 스트림을 스킵해도 되는지 유무 판단 처리 함수.
      * @param idx Stream Index
      * @return true 뷰어에 전송해야 함, false 뷰어에 전송 안해도 됨.
      */
-    fun isWriteIndex(idx : Int) : Boolean {
+    fun isWriteIndex(idx: Int): Boolean {
         // 해당 값이 없는경우 스킵
         return videoIdxSet.containsKey(idx)
     }
@@ -36,20 +46,31 @@ class ViewerInfo(private val viewerAddress: InetSocketAddress) {
         return videoIdxSet.size == 0
     }
 
-    fun setVideoUidList(captureTime: Long, streamList: Array<String>) {
-        currTime = captureTime
-        val maxSize = streamList.size
+    fun addCurrTime(time: Long) {
+        if (currTime < time) {
+            currTimeQue.offer(time)
+        }
+    }
+
+    fun setVideoUidList(streamList: Array<String>) {
         for (idx in streamList.indices) {
             // VideoPacket Index 값만 저장.
-            videoIdxSet.put(idx,true)
+            videoIdxSet.put(idx, true)
+        }
+    }
+
+    fun setVideoUidList(captureTime: Long, streamList: Array<String>) {
+        currTime = captureTime
+        for (idx in streamList.indices) {
+            // VideoPacket Index 값만 저장.
+            videoIdxSet.put(idx, true)
         }
     }
 
     fun removeVideoUid(uid: String) {
-        println("RemoveVideoUid $uid")
         try {
             videoIdxSet.remove(uid.split(Constants.RELIABLE_UID)[2].toInt())
-        } catch (ex : Exception) {
+        } catch (ex: Exception) {
             ex.printStackTrace()
             println("removeVideoUid Error $ex")
         }
