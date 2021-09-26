@@ -27,6 +27,9 @@ fun simpleStrBuilder(vararg values : Any, sep : String = Constants.SEP) : String
 /**
  * Uid 설정 처리 하는 함수
  * 각 패킷 구조체 성격에 맞게 설정한다.
+ * @see AuthPacket {ClientType}-{SysTime}
+ * @see VideoPacket v-{CaptureTime}-{idx}-{maxSize}
+ * @see MessagePacket {SysTime}
  */
 fun BasePacket.initUid(){
     when(this) {

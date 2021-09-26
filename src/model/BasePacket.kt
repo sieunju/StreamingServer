@@ -19,7 +19,6 @@ open class BasePacket(private val header: Header) {
     // reliableUid 규칙 {Type (Video, Audio)}|{CaptureTime}|{Packet Idx}|{Packet Size}
     // Type 은 나중에 Caster 유니크한 아이디 값으로 바꿔서 처리
     var reliableUid: String = "" // Uid
-    var reliableCnt = 0 // Reliable UDP 을 위한 UID
     var recipient: InetSocketAddress? = null // 받는 사람
 
     // "${header.type}${Constants.SEP}${reliableCnt}${Constants.SEP}"

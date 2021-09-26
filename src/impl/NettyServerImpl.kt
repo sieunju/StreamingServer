@@ -2,12 +2,8 @@ package impl
 
 import constants.Constants
 import converter.DatagramToPacketDecoder
-import converter.PacketToDatagramPacketEncoder
 import converter.ReliableReceivePacketDecoder
-import handler.LoggingHandler
-import handler.ReceiveAuthHandler
-import handler.ReceiveMessageHandler
-import handler.ReceiveVideoHandler
+import handler.*
 import io.netty.bootstrap.Bootstrap
 import io.netty.channel.Channel
 import io.netty.channel.ChannelInitializer
@@ -15,20 +11,18 @@ import io.netty.channel.ChannelOption
 import io.netty.channel.FixedRecvByteBufAllocator
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioDatagramChannel
+import model.BasePacket
 import model.MessagePacket
 import model.VideoPacket
 import service.NettyServer
 import service.OnReceiveMessage
-import service.SendManager
 import service.ViewerSendManager
-import java.net.InetSocketAddress
+import java.net.InetAddress
 
 class NettyServerImpl : NettyServer {
 
-    private val clientChannelSet: HashSet<InetSocketAddress> by lazy { HashSet() }
     private lateinit var group: NioEventLoopGroup
     private lateinit var serverChannel: Channel
-    private lateinit var sendManager: SendManager
     private lateinit var viewerSendManager: ViewerSendManager
 
     override fun start(port: Int) {
@@ -45,7 +39,6 @@ class NettyServerImpl : NettyServer {
                     override fun initChannel(ch: NioDatagramChannel?) {
                         if (ch == null) return
 
-                        sendManager = SendManagerImpl(ch)
                         viewerSendManager = ViewerSendManagerImpl(ch)
 
                         ch.config().sendBufferSize = Constants.MAX_BUF
@@ -55,32 +48,39 @@ class NettyServerImpl : NettyServer {
 //                        ch.config().receiveBufferSize = 10000000
                         ch.pipeline().apply {
                             addFirst("log", LoggingHandler())
-                            addAfter("log", "decode", ReliableReceivePacketDecoder())
-                            addAfter("decode", "packetDecode", DatagramToPacketDecoder(sendManager))
+                            addAfter("log", "decode", ReliableReceivePacketDecoder(ch))
+                            addAfter("decode", "packetDecode", DatagramToPacketDecoder(viewerSendManager))
 
-                            addAfter("packetDecode", "auth", ReceiveAuthHandler(sendManager))
+                            addAfter("packetDecode", "auth", ReceiveAuthHandler(viewerSendManager))
                             addAfter("packetDecode", "message", ReceiveMessageHandler(onReceiveMessage))
                             addAfter("packetDecode", "video", ReceiveVideoHandler(onReceiveMessage))
-
-                            addLast(PacketToDatagramPacketEncoder())
+                            addLast(ChannelWriteHandler())
                         }
                     }
                 })
             }
             serverChannel = bootStrap.bind(port).sync().channel()
+            println("Server IP ${InetAddress.getLocalHost()} Port ${port}")
         } finally {
             serverChannel.closeFuture().await()
         }
     }
 
+    override fun testVideo(packet: VideoPacket) {
+//        viewerSendManager.addVideo(packet)
+    }
+
+    override fun testSend(packet: BasePacket) {
+        serverChannel.writeAndFlush(packet)
+    }
+
     private val onReceiveMessage = object : OnReceiveMessage {
         override fun onVideo(packet: VideoPacket) {
-            sendManager.addPacket(packet)
+            viewerSendManager.addVideo(packet)
         }
 
         override fun onMessage(packet: MessagePacket) {
             val msg = MessagePacket(System.currentTimeMillis().plus(100), packet.msg)
-            sendManager.addPacket(msg)
         }
     }
 }

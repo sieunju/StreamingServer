@@ -3,6 +3,6 @@ package model
 import java.net.InetSocketAddress
 
 data class ReceiveDataPacket(
-    val sender: InetSocketAddress? = null,
+    val sender: InetSocketAddress,
     val data: String = ""
 )

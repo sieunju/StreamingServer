@@ -15,5 +15,7 @@ interface ViewerSendManager {
      */
     fun addVideo(packet : VideoPacket)
     fun addViewer(viewer : InetSocketAddress)
-    fun onReliablePacket(packet : ReliablePacket)
+    fun onReliablePacket(viewer : InetSocketAddress,packet : ReliablePacket)
+    fun start()
+    fun stop()
 }

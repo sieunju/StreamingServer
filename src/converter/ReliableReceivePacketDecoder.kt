@@ -4,11 +4,14 @@ import constants.Constants
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.socket.DatagramPacket
+import io.netty.channel.socket.nio.NioDatagramChannel
 import io.netty.handler.codec.MessageToMessageDecoder
 import model.ReceiveDataPacket
 import model.ReliablePacket
 
-class ReliableReceivePacketDecoder : MessageToMessageDecoder<DatagramPacket>() {
+class ReliableReceivePacketDecoder(
+    private val serverChannel : NioDatagramChannel
+) : MessageToMessageDecoder<DatagramPacket>() {
 
     override fun decode(ctx: ChannelHandlerContext?, msg: DatagramPacket?, out: MutableList<Any>?) {
         if (ctx == null || msg == null || out == null) return
@@ -21,10 +24,8 @@ class ReliableReceivePacketDecoder : MessageToMessageDecoder<DatagramPacket>() {
 
         // Reliable Packet 전송.
         val reliablePacket = ReliablePacket(message.split(Constants.SEP)[1])
-        val reliableBuf = PooledByteBufAllocator.DEFAULT.directBuffer()
-        reliableBuf.writeBytes(reliablePacket.encode().toByteArray())
-        ctx.writeAndFlush(DatagramPacket(reliableBuf, msg.sender()))
-        println("Reliable Packet ${reliablePacket.uid}")
+        reliablePacket.recipient = msg.sender()
+        serverChannel.writeAndFlush(reliablePacket)
 
         out.add(
             ReceiveDataPacket(

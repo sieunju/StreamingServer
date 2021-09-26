@@ -71,9 +71,9 @@ class LoggingHandler : ChannelDuplexHandler() {
 
     @Throws(Exception::class)
     override fun bind(ctx: ChannelHandlerContext, localAddress: SocketAddress, promise: ChannelPromise?) {
-        if(IS_DEBUG) {
-            logD(format(ctx, "BIND", localAddress))
-        }
+//        if(IS_DEBUG) {
+//            logD(format(ctx, "BIND", localAddress))
+//        }
         ctx.bind(localAddress, promise)
     }
 
@@ -254,10 +254,10 @@ class LoggingHandler : ChannelDuplexHandler() {
             val buf = StringBuilder(outputLength)
             buf.append(chStr).append(' ').append(eventName).append(": ")
                 .append(msgStr).append(", ").append(length).append('B')
-            if (byteBufFormat == ByteBufFormat.HEX_DUMP) {
-                buf.append(StringUtil.NEWLINE)
-                ByteBufUtil.appendPrettyHexDump(buf, content)
-            }
+//            if (byteBufFormat == ByteBufFormat.HEX_DUMP) {
+//                buf.append(StringUtil.NEWLINE)
+//                ByteBufUtil.appendPrettyHexDump(buf, content)
+//            }
             buf.toString()
         }
     }
