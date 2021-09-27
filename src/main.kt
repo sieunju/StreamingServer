@@ -17,34 +17,6 @@ fun main(){
                     server.start(Constants.PORT)
                 }.start()
             }
-            "e" -> {
-                val time = System.currentTimeMillis()
-                val cnt = sc.nextInt()
-                val isSuccess = sc.nextInt()
-                if(isSuccess == 1) {
-                    for(idx in 0 until cnt) {
-                        server.testVideo(
-                            VideoPacket(
-                                time = time,
-                                currPos = idx,
-                                maxSize = cnt,
-                                source = Constants.LONG_TXT
-                            )
-                        )
-                    }
-                } else {
-                    for (idx in 0 until cnt - 4) {
-                        server.testVideo(
-                            VideoPacket(
-                                time = time,
-                                currPos = idx,
-                                maxSize = cnt,
-                                source = Constants.LONG_TXT
-                            )
-                        )
-                    }
-                }
-            }
             "w" -> {
                 val time = System.currentTimeMillis()
                 val recipient = InetSocketAddress("172.30.3.0",Constants.PORT)

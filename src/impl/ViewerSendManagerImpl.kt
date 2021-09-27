@@ -22,7 +22,7 @@ class ViewerSendManagerImpl(
 ) : ViewerSendManager, Runnable {
 
     private var isRun = false
-    private val SAVE_MAX_STREAM = 20
+    private val SAVE_MAX_STREAM = 40
     private val WRITE_DELAY = 100L
 
     // 비디오 스트림 리스트 한 10개 정도만 가진다.
