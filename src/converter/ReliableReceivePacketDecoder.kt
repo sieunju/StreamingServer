@@ -1,6 +1,7 @@
 package converter
 
 import constants.Constants
+import constants.Header
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.socket.DatagramPacket
@@ -23,9 +24,12 @@ class ReliableReceivePacketDecoder(
         val message = String(bufArray)
 
         // Reliable Packet 전송.
-        val reliablePacket = ReliablePacket(message.split(Constants.SEP)[1])
-        reliablePacket.recipient = msg.sender()
-        serverChannel.writeAndFlush(reliablePacket)
+        if(message[0] != Header.RELIABLE.type) {
+            val reliablePacket = ReliablePacket(message.split(Constants.SEP)[1])
+//            println("ReliablePacket ${msg.sender()} $reliablePacket")
+            reliablePacket.recipient = msg.sender()
+            serverChannel.writeAndFlush(reliablePacket)
+        }
 
         out.add(
             ReceiveDataPacket(
