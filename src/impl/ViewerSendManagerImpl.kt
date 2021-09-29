@@ -22,8 +22,8 @@ class ViewerSendManagerImpl(
 ) : ViewerSendManager, Runnable {
 
     private var isRun = false
-    private val SAVE_MAX_STREAM = 40
-    private val WRITE_DELAY = 100L
+    private val SAVE_MAX_STREAM = 100
+    private val WRITE_DELAY = 10000L
 
     // 비디오 스트림 리스트 한 10개 정도만 가진다.
     private val videoStreamMap: ConcurrentHashMap<Long, Array<String>> by lazy { ConcurrentHashMap<Long, Array<String>>() }
@@ -44,8 +44,11 @@ class ViewerSendManagerImpl(
                             info.setVideoUidList(videoStreamList)
                         }
                         val maxSize = videoStreamList.size
+                        val strBuffer = StringBuffer()
                         for (idx in videoStreamList.indices) {
+
                             if (info.isWriteIndex(idx)) {
+                                strBuffer.append(videoStreamList[idx])
                                 val packet = VideoPacket(
                                     time = info.getVideoTime(),
                                     currPos = idx,
@@ -56,6 +59,7 @@ class ViewerSendManagerImpl(
                                 serverChannel.write(packet)
                             }
                         }
+                        println("FullStream ${strBuffer.toString().replace("\r","").replace("\n","")}")
                         serverChannel.flush()
                     }
                 }
@@ -113,7 +117,7 @@ class ViewerSendManagerImpl(
         }
 
         if (isFull) {
-            // 서버에서 저장 가능한 프레임은 20개다.
+            // 서버에서 저장 가능한 프레임은 40개다.
             if (videoStreamMap.size > SAVE_MAX_STREAM) {
                 var minValue = Long.MAX_VALUE
                 val iterator = videoStreamMap.keys().iterator()

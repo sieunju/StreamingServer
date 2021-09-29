@@ -32,17 +32,17 @@ class NettyServerImpl : NettyServer {
                 group(group)
                 channel(NioDatagramChannel::class.java)
                 option(ChannelOption.SO_BROADCAST, true)
-                option(ChannelOption.SO_SNDBUF, Constants.MAX_BUF)
-                option(ChannelOption.SO_RCVBUF, Constants.MAX_BUF)
-                option(ChannelOption.RCVBUF_ALLOCATOR, FixedRecvByteBufAllocator(Constants.MAX_BUF))
+//                option(ChannelOption.SO_SNDBUF, Constants.MAX_BUF)
+//                option(ChannelOption.SO_RCVBUF, Constants.MAX_BUF)
+//                option(ChannelOption.RCVBUF_ALLOCATOR, FixedRecvByteBufAllocator(Constants.MAX_BUF))
                 handler(object : ChannelInitializer<NioDatagramChannel>() {
                     override fun initChannel(ch: NioDatagramChannel?) {
                         if (ch == null) return
 
                         viewerSendManager = ViewerSendManagerImpl(ch)
 
-                        ch.config().sendBufferSize = Constants.MAX_BUF
-                        ch.config().receiveBufferSize = Constants.MAX_BUF
+//                        ch.config().sendBufferSize = Constants.MAX_BUF
+//                        ch.config().receiveBufferSize = Constants.MAX_BUF
 //                        ch.config().setRecvByteBufAllocator(FixedRecvByteBufAllocator(1000000))
 //                        ch.config().sendBufferSize = 10000000
 //                        ch.config().receiveBufferSize = 10000000
