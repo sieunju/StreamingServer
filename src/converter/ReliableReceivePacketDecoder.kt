@@ -26,7 +26,7 @@ class ReliableReceivePacketDecoder(
         // Reliable Packet 전송.
         if(message[0] != Header.RELIABLE.type) {
             val reliablePacket = ReliablePacket(message.split(Constants.SEP)[1])
-            // println("ReliablePacket ${msg.sender()} $reliablePacket")
+//            println("ReliablePacket ${msg.sender()} $reliablePacket")
             reliablePacket.recipient = msg.sender()
             serverChannel.writeAndFlush(reliablePacket)
         }
