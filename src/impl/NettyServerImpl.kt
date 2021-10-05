@@ -11,6 +11,11 @@ import io.netty.channel.ChannelOption
 import io.netty.channel.FixedRecvByteBufAllocator
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.NioDatagramChannel
+import io.netty.util.concurrent.DefaultEventExecutor
+import io.netty.util.concurrent.DefaultEventExecutorGroup
+import io.netty.util.concurrent.DefaultThreadFactory
+import io.netty.util.concurrent.EventExecutorGroup
+import io.reactivex.schedulers.Schedulers
 import model.BasePacket
 import model.MessagePacket
 import model.VideoPacket
@@ -54,7 +59,7 @@ class NettyServerImpl : NettyServer {
                             addAfter("packetDecode", "auth", ReceiveAuthHandler(viewerSendManager))
                             addAfter("packetDecode", "message", ReceiveMessageHandler(onReceiveMessage))
                             addAfter("packetDecode", "video", ReceiveVideoHandler(onReceiveMessage))
-                            addLast(ChannelWriteHandler())
+                            addLast(DefaultEventExecutorGroup(4,DefaultThreadFactory("write")),ChannelWriteHandler())
                         }
                     }
                 })
