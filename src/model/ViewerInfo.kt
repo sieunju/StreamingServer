@@ -70,6 +70,7 @@ class ViewerInfo(private val viewerAddress: InetSocketAddress) {
     fun removeVideoUid(uid: String) {
         try {
             videoIdxSet.remove(uid.split(Constants.RELIABLE_UID)[2].toInt())
+            println("VideoIdx Size ${videoIdxSet.size}")
         } catch (ex: Exception) {
             ex.printStackTrace()
             println("removeVideoUid Error $ex")

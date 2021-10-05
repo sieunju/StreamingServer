@@ -37,8 +37,8 @@ class NettyServerImpl : NettyServer {
                 group(group)
                 channel(NioDatagramChannel::class.java)
                 option(ChannelOption.SO_BROADCAST, true)
-//                option(ChannelOption.SO_SNDBUF, Constants.MAX_BUF)
-//                option(ChannelOption.SO_RCVBUF, Constants.MAX_BUF)
+                option(ChannelOption.SO_SNDBUF, Constants.MAX_BUF)
+                option(ChannelOption.SO_RCVBUF, Constants.MAX_BUF)
 //                option(ChannelOption.RCVBUF_ALLOCATOR, FixedRecvByteBufAllocator(Constants.MAX_BUF))
                 handler(object : ChannelInitializer<NioDatagramChannel>() {
                     override fun initChannel(ch: NioDatagramChannel?) {
@@ -59,7 +59,7 @@ class NettyServerImpl : NettyServer {
                             addAfter("packetDecode", "auth", ReceiveAuthHandler(viewerSendManager))
                             addAfter("packetDecode", "message", ReceiveMessageHandler(onReceiveMessage))
                             addAfter("packetDecode", "video", ReceiveVideoHandler(onReceiveMessage))
-                            addLast(DefaultEventExecutorGroup(4,DefaultThreadFactory("write")),ChannelWriteHandler())
+                            addLast(DefaultEventExecutorGroup(4,DefaultThreadFactory("w")),ChannelWriteHandler())
                         }
                     }
                 })
