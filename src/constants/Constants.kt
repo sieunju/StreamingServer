@@ -12,7 +12,7 @@ object Constants {
     const val VIDEO = "v"
     const val AUDIO = "a"
     // const val MAX_BUF = 65_535
-    const val MAX_BUF = 1_500
+    const val MAX_BUF = 6_000
     const val SEP = "|" // 구분자
     const val RELIABLE_UID = "-"
     var LONG_TXT = """

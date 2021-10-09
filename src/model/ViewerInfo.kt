@@ -29,6 +29,13 @@ class ViewerInfo(private val viewerAddress: InetSocketAddress) {
     }
 
     /**
+     * 다음 프레임으로 이동 처리 함수
+     */
+    fun nextVideoTime(){
+        currTime = currTimeQue.poll()
+    }
+
+    /**
      * 해당 비디오 스트림을 스킵해도 되는지 유무 판단 처리 함수.
      * @param idx Stream Index
      * @return true 뷰어에 전송해야 함, false 뷰어에 전송 안해도 됨.

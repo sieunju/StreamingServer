@@ -25,18 +25,17 @@ import kotlin.random.Random
  */
 class ViewerSendManagerImpl(
     private val serverChannel: NioDatagramChannel
-) : ViewerSendManager, Runnable {
+) : ViewerSendManager{
 
     private var isRun = false
-    private val SAVE_MAX_STREAM = 10
-    private val WRITE_DELAY = 100L
+    private val SAVE_MAX_STREAM = 20
+    private val WRITE_DELAY = 10L
 
     // 비디오 스트림 리스트 한 SAVE_MAX_STREAM 개 정도만 가진다.
     private val videoStreamMap: ConcurrentHashMap<Long, Array<String>> by lazy { ConcurrentHashMap<Long, Array<String>>() }
 
     // 뷰어들의 맵
     private val viewerClientMap: ConcurrentHashMap<InetSocketAddress, ViewerInfo> by lazy { ConcurrentHashMap<InetSocketAddress, ViewerInfo>() }
-    private val executors: ExecutorService by lazy { Executors.newSingleThreadExecutor() }
     private var currentMiddleTime: Long = -1
     private val viewerSendFlowable: ConnectableFlowable<Long> by lazy {
         Flowable.interval(
@@ -47,19 +46,22 @@ class ViewerSendManagerImpl(
     }
     private var disposable: Disposable? = null
 
+    /**
+     * 뷰어한테 비디오 프레임 보내는 처리.
+     */
     private fun sendRxPacket(viewer: InetSocketAddress, info: ViewerInfo) {
         Single.create<Boolean> { emitter ->
             val videoStreamList = videoStreamMap[info.getVideoTime()]
+            println("Viewer Time ${info.getVideoTime()} VideoStream ${videoStreamList?.size} 뷰어에게 비디오 스트림을 다 보냈나요? ${info.isVideoStreamDone()}")
             if (videoStreamList != null) {
+                // 뷰어한테 스트림을 다 보냈다면 다시 보내야할 비디오 스트림 인덱스를 셋팅
                 if (info.isVideoStreamDone()) {
                     info.setVideoUidList(videoStreamList)
                 }
                 val maxSize = videoStreamList.size
-                val strBuffer = StringBuffer()
                 for (idx in videoStreamList.indices) {
 
                     if (info.isWriteIndex(idx)) {
-                        strBuffer.append(videoStreamList[idx])
                         val packet = VideoPacket(
                             time = info.getVideoTime(),
                             currPos = idx,
@@ -67,64 +69,29 @@ class ViewerSendManagerImpl(
                             source = videoStreamList[idx]
                         )
                         packet.recipient = viewer
-                        serverChannel.write(packet)
+                        serverChannel.writeAndFlush(packet)
                     }
                 }
-                // println("FullStream ${strBuffer.toString().replace("\r", "").replace("\n", "")}")
-                serverChannel.flush()
-                emitter.onSuccess(true)
+            } else {
+                // 해당 비디오 스트림이 널인경우 다음 프레임 값으로 이동
+                info.nextVideoTime()
             }
+
+            emitter.onSuccess(true)
         }
             .subscribeOn(Schedulers.io())
             .subscribe()
     }
 
-    // 뷰어들에게 적절한 비트맵을 보낸다.
-    override fun run() {
-        while (isRun) {
-            runCatching {
-                viewerClientMap.forEach { (viewer: InetSocketAddress, info: ViewerInfo) ->
-                    val videoStreamList = videoStreamMap[info.getVideoTime()]
-                    if (videoStreamList != null) {
-                        if (info.isVideoStreamDone()) {
-                            info.setVideoUidList(videoStreamList)
-                        }
-                        val maxSize = videoStreamList.size
-                        val strBuffer = StringBuffer()
-                        for (idx in videoStreamList.indices) {
-
-                            if (info.isWriteIndex(idx)) {
-                                strBuffer.append(videoStreamList[idx])
-                                val packet = VideoPacket(
-                                    time = info.getVideoTime(),
-                                    currPos = idx,
-                                    maxSize = maxSize,
-                                    source = videoStreamList[idx]
-                                )
-                                packet.recipient = viewer
-                                serverChannel.write(packet)
-                            }
-                        }
-                        println("FullStream ${strBuffer.toString().replace("\r", "").replace("\n", "")}")
-                        serverChannel.flush()
-                    }
-                }
-                Thread.sleep(WRITE_DELAY)
-            }
-        }
-    }
-
     override fun start() {
         if (!isRun) {
             isRun = true
-//            executors.submit(this)
             if (disposable != null) {
                 disposable?.dispose()
-                disposable= null
+                disposable = null
             }
             disposable = viewerSendFlowable
                 .subscribe({
-                    // println("Thread ${Thread.currentThread()} $it")
                     viewerClientMap.forEach { (viewer: InetSocketAddress, info: ViewerInfo) ->
                         sendRxPacket(viewer, info)
                     }
@@ -138,7 +105,6 @@ class ViewerSendManagerImpl(
     override fun stop() {
         isRun = false
         disposable?.dispose()
-//        executors.shutdown()
     }
 
     private fun addViewerCurrTime(time: Long) {
@@ -178,8 +144,7 @@ class ViewerSendManagerImpl(
         }
 
         if (isFull) {
-            // 서버에서 저장 가능한 프레임은 40개다.
-                println("VideoStream Size ${videoStreamMap.size}")
+
             if (videoStreamMap.size > SAVE_MAX_STREAM) {
                 var minValue = Long.MAX_VALUE
                 val iterator = videoStreamMap.keys().iterator()
